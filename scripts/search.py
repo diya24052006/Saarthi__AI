@@ -1,14 +1,20 @@
 import json
+import os
 import re
 from pathlib import Path
 from threading import Lock
+
+# Limit CPU thread usage.
+# This can reduce unnecessary memory usage on small deployment instances.
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
 
 import faiss
 from sentence_transformers import SentenceTransformer
 
 
 # ============================================================
-# PATH CONFIGURATION
+# BASE PATHS
 # ============================================================
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,24 +30,22 @@ METADATA_PATH = BASE_DIR / "vectorstore" / "metadata.json"
 MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
 
 DEFAULT_TOP_K = 5
-CANDIDATE_K = 10
+MAX_TOP_K = 10
+CANDIDATE_K = 15
 
-# Maximum characters sent to the embedding model.
-# This prevents unnecessarily large user queries.
 MAX_QUERY_LENGTH = 1000
 
 
 # ============================================================
-# GLOBAL RESOURCES
+# LAZY-LOADED RESOURCES
 # ============================================================
 
 _index = None
 _metadata = None
 _model = None
 
-# Prevent multiple requests from loading the model simultaneously.
-_model_lock = Lock()
 _index_lock = Lock()
+_model_lock = Lock()
 
 
 # ============================================================
@@ -50,7 +54,7 @@ _index_lock = Lock()
 
 def clean_query(query: str) -> str:
     """
-    Clean the user's query before generating an embedding.
+    Clean and normalize the user's search query.
     """
 
     if not query:
@@ -64,13 +68,12 @@ def clean_query(query: str) -> str:
     # Remove special characters
     query = re.sub(r"[^\w\s]", " ", query)
 
-    # Remove extra spaces
+    # Remove extra whitespace
     query = re.sub(r"\s+", " ", query)
 
-    # Remove unnecessary whitespace
     query = query.strip()
 
-    # Limit query length
+    # Prevent unnecessarily large embedding input
     query = query[:MAX_QUERY_LENGTH]
 
     return query
@@ -82,7 +85,10 @@ def clean_query(query: str) -> str:
 
 def get_index():
     """
-    Load FAISS index only when it is actually needed.
+    Load the FAISS index only when search is actually needed.
+
+    This prevents FAISS from consuming memory during
+    FastAPI startup.
     """
 
     global _index
@@ -91,7 +97,6 @@ def get_index():
 
         with _index_lock:
 
-            # Double-check after acquiring the lock
             if _index is None:
 
                 print("Loading FAISS index...")
@@ -141,7 +146,7 @@ def get_metadata():
             _metadata = json.load(file)
 
         print(
-            f"Metadata loaded: {len(_metadata)} documents"
+            f"Gita metadata loaded: {len(_metadata)} documents"
         )
 
     return _metadata
@@ -153,10 +158,10 @@ def get_metadata():
 
 def get_model():
     """
-    Load Sentence Transformer only when semantic search
-    is actually requested.
+    Load the Sentence Transformer model lazily.
 
-    The model is loaded once and then reused.
+    The model is loaded only on the first search request
+    and reused afterwards.
     """
 
     global _model
@@ -165,7 +170,6 @@ def get_model():
 
         with _model_lock:
 
-            # Double-check after acquiring lock
             if _model is None:
 
                 print(
@@ -176,6 +180,8 @@ def get_model():
                     MODEL_NAME,
                     device="cpu"
                 )
+
+                _model.eval()
 
                 print(
                     "Embedding model ready!"
@@ -193,19 +199,19 @@ def search_gita(
     top_k: int = DEFAULT_TOP_K
 ):
     """
-    Search Bhagavad Gita passages using semantic similarity.
+    Perform semantic search over Bhagavad Gita passages.
 
     Parameters
     ----------
-    query : str
-        User's semantic search query.
+    query:
+        Semantic search query.
 
-    top_k : int
-        Number of results to return.
+    top_k:
+        Number of Gita passages to return.
 
     Returns
     -------
-    list
+    list:
         Ranked Gita passages.
     """
 
@@ -230,18 +236,24 @@ def search_gita(
     except (TypeError, ValueError):
         top_k = DEFAULT_TOP_K
 
-    top_k = max(1, min(top_k, 20))
+    top_k = max(
+        1,
+        min(top_k, MAX_TOP_K)
+    )
 
     # --------------------------------------------------------
-    # Load resources lazily
+    # Load resources only when needed
     # --------------------------------------------------------
 
     index = get_index()
     metadata = get_metadata()
     model = get_model()
 
+    if index.ntotal == 0:
+        return []
+
     # --------------------------------------------------------
-    # Generate query embedding
+    # Generate embedding
     # --------------------------------------------------------
 
     query_embedding = model.encode(
@@ -252,7 +264,7 @@ def search_gita(
     )
 
     # --------------------------------------------------------
-    # FAISS search
+    # Search FAISS
     # --------------------------------------------------------
 
     candidate_k = min(
@@ -266,7 +278,7 @@ def search_gita(
     )
 
     # --------------------------------------------------------
-    # Build results
+    # Build result list
     # --------------------------------------------------------
 
     results = []
@@ -278,11 +290,11 @@ def search_gita(
         indices[0]
     ):
 
-        # Invalid FAISS index
+        # Invalid index
         if idx < 0:
             continue
 
-        # Safety check
+        # Metadata safety check
         if idx >= len(metadata):
             continue
 
@@ -293,7 +305,7 @@ def search_gita(
             f"index_{idx}"
         )
 
-        # Avoid duplicate documents
+        # Prevent duplicate documents
         if document_id in seen_ids:
             continue
 
@@ -343,7 +355,7 @@ def search_gita(
 
 def display_results(results):
     """
-    Pretty-print search results in the terminal.
+    Display search results in the terminal.
     """
 
     print("\n")
@@ -352,7 +364,9 @@ def display_results(results):
     print("=" * 70)
 
     if not results:
+
         print("No results found.")
+
         return
 
     for i, result in enumerate(
@@ -362,31 +376,34 @@ def display_results(results):
 
         print(
             f"\n{i}. "
-            f"Chapter {result['chapter']} "
-            f"| Verse {result['verse']}"
+            f"Chapter {result.get('chapter')} "
+            f"| Verse {result.get('verse')}"
         )
 
         print(
-            f"Score: {result['score']:.4f}"
+            f"Score: "
+            f"{result.get('score', 0):.4f}"
         )
 
         print(
-            f"Speaker: {result['speaker']}"
+            f"Speaker: "
+            f"{result.get('speaker')}"
         )
 
         print(
-            f"Title: {result['chapter_title']}"
+            f"Title: "
+            f"{result.get('chapter_title')}"
         )
 
         print(
-            f"\n{result['text']}"
+            f"\n{result.get('text')}"
         )
 
         print("-" * 70)
 
 
 # ============================================================
-# TERMINAL TESTING
+# TERMINAL TEST
 # ============================================================
 
 if __name__ == "__main__":
@@ -396,8 +413,8 @@ if __name__ == "__main__":
     print("=" * 70)
 
     print(
-        "\nResources will be loaded only when "
-        "the first search is performed."
+        "\nFAISS, metadata and embedding model "
+        "will load only when the first search is performed."
     )
 
     while True:
@@ -415,9 +432,33 @@ if __name__ == "__main__":
 
             break
 
-        results = search_gita(
-            query,
-            top_k=5
-        )
+        if not query:
 
-        display_results(results)
+            print(
+                "Please enter a search query."
+            )
+
+            continue
+
+        try:
+
+            results = search_gita(
+                query,
+                top_k=5
+            )
+
+            display_results(results)
+
+        except Exception as e:
+
+            print(
+                "\n❌ SEARCH ERROR"
+            )
+
+            print(
+                "-" * 70
+            )
+
+            print(
+                str(e)
+            )
