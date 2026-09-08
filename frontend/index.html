@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="AI Saarthi - Bhagavad Gita inspired guidance assistant"
+    >
+
+    <title>AI Saarthi 🌱</title>
+
+    <link
+        rel="stylesheet"
+        href="/static/style.css"
+    >
+
+</head>
+
+
+<body>
+
+    <!-- =====================================================
+         APP
+    ====================================================== -->
+
+    <div class="app">
+
+
+        <!-- =================================================
+             SIDEBAR
+        ================================================== -->
+
+        <aside
+            class="sidebar"
+            id="sidebar"
+        >
+
+            <div class="sidebar-top">
+
+                <div class="brand">
+
+                    <div class="brand-icon">
+                        🌱
+                    </div>
+
+                    <div>
+
+                        <h1>
+                            AI Saarthi
+                        </h1>
+
+                        <span>
+                            Your inner guide
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <button
+                    class="close-sidebar"
+                    id="closeSidebar"
+                    aria-label="Close sidebar"
+                >
+                    ×
+                </button>
+
+
+                <button
+                    class="new-chat-btn"
+                    id="newChatBtn"
+                >
+
+                    <span class="plus">
+                        +
+                    </span>
+
+                    <span>
+                        New conversation
+                    </span>
+
+                </button>
+
+            </div>
+
+
+            <!-- Conversation history -->
+
+            <div class="history">
+
+                <p class="history-title">
+                    CONVERSATIONS
+                </p>
+
+
+                <div
+                    class="history-list"
+                    id="historyList"
+                >
+
+                    <div class="empty-history">
+                        Your conversations
+                        will appear here.
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- Sidebar bottom -->
+
+            <div class="sidebar-bottom">
+
+                <button
+                    class="sidebar-action"
+                    id="themeBtn"
+                >
+
+                    <span id="themeIcon">
+                        ☾
+                    </span>
+
+                    <span>
+                        Appearance
+                    </span>
+
+                </button>
+
+
+                <div class="saarthi-info">
+
+                    <div class="mini-logo">
+                        🌿
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            AI Saarthi
+                        </strong>
+
+                        <small>
+                            Gita-inspired guidance
+                        </small>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </aside>
+
+
+
+        <!-- =================================================
+             MAIN CONTENT
+        ================================================== -->
+
+        <main class="main">
+
+
+            <!-- =================================================
+                 HEADER
+            ================================================== -->
+
+            <header class="topbar">
+
+                <button
+                    class="menu-btn"
+                    id="menuBtn"
+                    aria-label="Open menu"
+                >
+                    ☰
+                </button>
+
+
+                <div class="mobile-brand">
+
+                    <span>
+                        🌱
+                    </span>
+
+                    <strong>
+                        AI Saarthi
+                    </strong>
+
+                </div>
+
+
+                <div class="topbar-right">
+
+                    <span class="status-dot"></span>
+
+                    <span class="status-text">
+                        Saarthi is here
+                    </span>
+
+                </div>
+
+            </header>
+
+
+
+            <!-- =================================================
+                 CHAT AREA
+            ================================================== -->
+
+            <section
+                class="chat-area"
+                id="chatArea"
+            >
+
+
+                <!-- =================================================
+                     WELCOME SCREEN
+                ================================================== -->
+
+                <div
+                    class="welcome"
+                    id="welcomeScreen"
+                >
+
+                    <div class="welcome-orb">
+
+                        <div class="orb-inner">
+                            🌱
+                        </div>
+
+                    </div>
+
+
+                    <div class="welcome-label">
+                        BHAGAVAD GITA • AI GUIDANCE
+                    </div>
+
+
+                    <h2>
+                        What is on your mind?
+                    </h2>
+
+
+                    <p class="welcome-description">
+
+                        Tell Saarthi what you're going through.
+                        Together, we'll explore the situation
+                        through timeless wisdom and practical
+                        steps for today.
+
+                    </p>
+
+
+                    <!-- Suggestion cards -->
+
+                    <div class="suggestion-grid">
+
+
+                        <button
+                            class="suggestion-card"
+                            data-message="I am struggling with my career and I don't know what direction to take."
+                        >
+
+                            <span class="suggestion-icon">
+                                💼
+                            </span>
+
+                            <span>
+
+                                <strong>
+                                    Career & purpose
+                                </strong>
+
+                                <small>
+                                    Feeling lost about my future
+                                </small>
+
+                            </span>
+
+                        </button>
+
+
+                        <button
+                            class="suggestion-card"
+                            data-message="I recently went through a breakup and I am finding it difficult to move on."
+                        >
+
+                            <span class="suggestion-icon">
+                                ❤️
+                            </span>
+
+                            <span>
+
+                                <strong>
+                                    Relationships
+                                </strong>
+
+                                <small>
+                                    Understanding attachment
+                                </small>
+
+                            </span>
+
+                        </button>
+
+
+                        <button
+                            class="suggestion-card"
+                            data-message="I failed at something important even though I tried very hard, and I feel disappointed in myself."
+                        >
+
+                            <span class="suggestion-icon">
+                                🌧️
+                            </span>
+
+                            <span>
+
+                                <strong>
+                                    Failure
+                                </strong>
+
+                                <small>
+                                    Finding strength after setbacks
+                                </small>
+
+                            </span>
+
+                        </button>
+
+
+                        <button
+                            class="suggestion-card"
+                            data-message="I feel lonely and disconnected from the people around me."
+                        >
+
+                            <span class="suggestion-icon">
+                                🌙
+                            </span>
+
+                            <span>
+
+                                <strong>
+                                    Loneliness
+                                </strong>
+
+                                <small>
+                                    Finding peace within
+                                </small>
+
+                            </span>
+
+                        </button>
+
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- =================================================
+                     MESSAGES
+                ================================================== -->
+
+                <div
+                    class="messages"
+                    id="messages"
+                ></div>
+
+
+            </section>
+
+
+
+            <!-- =================================================
+                 INPUT AREA
+            ================================================== -->
+
+            <section class="input-section">
+
+
+                <div class="input-wrapper">
+
+
+                    <textarea
+                        id="messageInput"
+                        rows="1"
+                        maxlength="4000"
+                        placeholder="Share what's on your mind..."
+                    ></textarea>
+
+
+                    <button
+                        id="sendBtn"
+                        class="send-btn"
+                        aria-label="Send message"
+                    >
+
+                        <span>
+                            ↑
+                        </span>
+
+                    </button>
+
+                </div>
+
+
+                <div class="input-footer">
+
+                    <span>
+                        AI Saarthi can make mistakes.
+                    </span>
+
+                    <span class="separator">
+                        •
+                    </span>
+
+                    <span>
+                        For reflection and guidance, not professional care.
+                    </span>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+
+
+    <!-- =====================================================
+         MOBILE OVERLAY
+    ====================================================== -->
+
+    <div
+        class="sidebar-overlay"
+        id="sidebarOverlay"
+    ></div>
+
+
+
+    <!-- =====================================================
+         JAVASCRIPT
+    ====================================================== -->
+
+    <script src="/static/script.js"></script>
+
+</body>
+
+</html>
